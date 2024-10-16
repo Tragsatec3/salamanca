@@ -39,7 +39,7 @@
 
   // Mapas base
   var osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
+    maxZoom: 25,
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   });
 
@@ -47,21 +47,23 @@
 	   layers: "Catastro",//nombre de la capa (ver get capabilities)
 	   format: 'image/jpeg',
 	   transparent: true,
+     	maxZoom: 25,
 	   version: '1.1.1',//wms version (ver get capabilities)
 	   attribution: "DIRECCION GENERAL DEL CATASTRO"
 	});
 
   var googleLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=m&hl=es&z={z}&x={x}&y={y}', {
-    maxZoom: 19,
+    maxZoom: 25,
     attribution: '&copy; <a href="https://www.google.com/intl/es/help/terms_maps.html">Google Maps</a>'
   }).addTo(map);
   
   var callejero = L.tileLayer.wms('http://www.ign.es/wms-inspire/ign-base?', {
     layers: 'IGNBaseTodo', 
     format: 'image/png',
+    maxZoom: 25,
     transparent: true,
     attribution: '© Instituto Geográfico Nacional'
-  });
+});
 
   // Estilos
   var estilo_1 = {
