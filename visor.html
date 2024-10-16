@@ -56,7 +56,12 @@
     attribution: '&copy; <a href="https://www.google.com/intl/es/help/terms_maps.html">Google Maps</a>'
   }).addTo(map);
   
-
+  var callejero = L.tileLayer.wms('http://www.ign.es/wms-inspire/ign-base?', {
+    layers: 'IGNBaseTodo', 
+    format: 'image/png',
+    transparent: true,
+    attribution: '© Instituto Geográfico Nacional'
+  });
 
   // Estilos
   var estilo_1 = {
