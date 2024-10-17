@@ -5,21 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mapa de Salamanca</title>
   
-  <!-- estilos CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="main.css" />
+  
+  <script src="jquery-3.7.1.js"></script>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="leaflet-maskcanvas-master/src/QuadTree.js"></script>
+  <script src="leaflet-maskcanvas-master/src/L.GridLayer.MaskCanvas.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.6/proj4.js"></script>
+  
+  <script type="text/javascript" src="salamanca.js"></script>
+  <script type="text/javascript" src="municipios.js"></script>
+  <script src="https://unpkg.com/shapefile@latest/dist/shapefile.js"></script>
 
-	
   <style>
-    #map { height: 800px; width: 100%; }
-
-
+    #map { height: 600px; width: 90%; }
   </style>
 </head>
 
 <body>
 <h1>VISOR SALAMANCA: CATASTRO Y CALLEJEROS</h1>
 <div id="map"></div>
-	
+
 <h2>Conversión de Coordenadas a WGS84</h2>
 <label for="system">Selecciona el sistema de coordenadas:</label>
 <select id="system">
@@ -39,52 +46,48 @@
 <button id="convert">Convertir y Generar URL</button>
 
 <p id="result"></p>
-	
-<!-- Carga de plugins -->
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script src="leaflet.wms.js"></script>
 
-
-
-<!-- rutas de los archivos js usados para cada capa -->
-<script type="text/javascript" src="salamanca.js"></script>
-<script type="text/javascript" src="municipios.js"></script>
-
-<script src="https://unpkg.com/shapefile@latest/dist/shapefile.js"></script>
-
-<!-- Mapa -->
 <script>
-  // Mapa centrado en Salamanca
-  var map = L.map('map').setView([40.8374, -6.0287], 9);
+  // Inicialización del mapa
+  var map = L.map('map').setView([40.8374, -6.0287], 9.4);
 
-  // Mapas base
   // Mapas base
   var osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 25,
+    maxZoom: 19,
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-  });
+  }).addTo(map);
 
   var catastroLayer = L.tileLayer.wms("http://ovc.catastro.meh.es/Cartografia/WMS/ServidorWMS.aspx?", {
-	   layers: "Catastro",//nombre de la capa (ver get capabilities)
-	   format: 'image/jpeg',
-	   transparent: true,
-	   maxZoom: 25,
-	   version: '1.1.1',//wms version (ver get capabilities)
-	   attribution: "DIRECCION GENERAL DEL CATASTRO"
-	});
+    layers: "Catastro",
+    format: 'image/jpeg',
+    transparent: true,
+    maxZoom: 25,
+    version: '1.1.1',
+    attribution: "DIRECCION GENERAL DEL CATASTRO"
+  });
 
   var googleLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=m&hl=es&z={z}&x={x}&y={y}', {
     maxZoom: 25,
     attribution: '&copy; <a href="https://www.google.com/intl/es/help/terms_maps.html">Google Maps</a>'
-  }).addTo(map);
-  
+  });
+
   var callejero = L.tileLayer.wms('http://www.ign.es/wms-inspire/ign-base?', {
     layers: 'IGNBaseTodo', 
     format: 'image/png',
     maxZoom: 25,
     transparent: true,
     attribution: '© Instituto Geográfico Nacional'
-});
+  });
+
+  // Crear la capa de máscara
+  var layerMaskSa = L.TileLayer.maskCanvas({
+    radius: 5,
+    useAbsoluteRadius: true,
+    color: '#000',
+    opacity: 0.5,
+    noMask: false,
+    lineColor: '#A00'
+  }).addTo(map); // Agregamos la máscara al mapa
 
   // Estilos
   var estilo_1 = {
@@ -93,15 +96,13 @@
     "opacity": 0.8
   };
 
-var estilo_2 = {
+  var estilo_2 = {
     "color": "#3182bd", 
-    "weight": 0.3,       
-    "opacity": 0.5,     
-    "fill": true,      
+    "weight": 3,
+    "opacity": 0.5,
+    "fill": true,
     "fillOpacity": 0.01 
-};
-
-
+  };
 
   // Capas
   var salamancaLayer = L.geoJson(salamanca, {
@@ -112,12 +113,11 @@ var estilo_2 = {
   var muniLayer = L.geoJson(municipios, {
     onEachFeature: onEachFeature,
     style: estilo_2,
-  });
-
+  }).addTo(map);
 
   // Mapas agregados en una sola clase
- var baseMaps = {
-    "Mapa Base IGN": callejero,
+  var baseMaps = {
+    "Callejero": callejero,
     "Google Maps": googleLayer,
     "Open Street Map": osmLayer,
     "Catastro": catastroLayer
@@ -126,7 +126,8 @@ var estilo_2 = {
   // Provincias y municipios en una sola clase
   var overlay = {
     "Provincia de Salamanca": salamancaLayer,
-    "Municipios": muniLayer
+    "Municipios": muniLayer,
+    "Máscara": layerMaskSa
   };
 
   // Funciones de popup para cada capa
@@ -139,74 +140,66 @@ var estilo_2 = {
     var popupContent = "<b>Salamanca</b>";
     layer.bindPopup(popupContent);
   }
-  
 
-//control escala
-L.control.scale({
+  // Control de escala
+  L.control.scale({
     metric: true,
     imperial: false,
     maxWidth: 300,
     position: 'bottomleft'
-}).addTo(map);
-
- // control de los mapas base  
- L.control.layers(baseMaps, null, {
-    position: 'bottomright',
-    collapsed: false
   }).addTo(map);
 
   // Control de capas
-  L.control.layers(null, overlay, {
+  var control = L.control.layers(baseMaps, overlay, {
     position: 'topright',
     collapsed: false
-  }).addTo(map)
+  }).addTo(map);
 
+  // Evento de clic en el mapa
+  map.on('click', function(e) {
+    var url = catastroLayer.getFeatureInfoUrl(e.latlng, {
+      'info_format': 'application/json',
+      'query_layers': 'Catastro',
+      'buffer': 5,
+      'layers': 'Catastro',
+    });
 
-// Evento de clic en el mapa
-map.on('click', function(e) {
-  var url = catastroLayer.getFeatureInfoUrl(e.latlng, {
-    'info_format': 'application/json',
-    'query_layers': 'Catastro',
-    'buffer': 5,
-    'layers': 'Catastro',
+    if (url) {
+      fetch(url)
+      .then(response => response.json())
+      .then(data => {
+        if (data.features.length > 0) {
+          var properties = data.features[0].properties;
+          var referencia = properties.TXTPARCELA;
+          L.popup()
+          .setLatLng(e.latlng)
+          .setContent("Referencia Catastral: " + referencia)
+          .openOn(map);
+        } else {
+          alert("No se encontró información en esta ubicación.");
+        }
+      })
+      .catch(error => console.error('Error al obtener información:', error));
+    }
   });
 
-  if (url) {
-  fetch(url)
-  .then(response => response.json())
-  .then(data => {
-  if (data.features.length > 0) {
-    var properties = data.features[0].properties;
-    var referencia = properties.TXTPARCELA;
-  L.popup()
-  .setLatLng(e.latlng)
-  .setContent("Referencia Catastral: " + referencia)
-  .openOn(map);
- } else {
-  alert("No se encontró información en esta ubicación.");
-  }
-  })
-  .catch(error => console.error('Error al obtener información:', error));
-  }
-});
-
-// Función para obtener los parámetros de la URL
-function getQueryParam(param) {
+  // Función para obtener los parámetros de la URL
+  function getQueryParam(param) {
     var urlParams = new URLSearchParams(window.location.search);
     return urlParams.get(param);
-}
+  }
 
-// Aquí se obtienen los parámetros lat, long y zoom
-var lat = parseFloat(getQueryParam('lat'));
-var lng = parseFloat(getQueryParam('lng'));
-var zoom = parseInt(getQueryParam('zoom'));
+  // Aquí se obtienen los parámetros lat, long y zoom
+  var lat = parseFloat(getQueryParam('lat'));
+  var lng = parseFloat(getQueryParam('lng'));
+  var zoom = parseInt(getQueryParam('zoom'));
 
-// Hay que verificar si los parámetros están bien, son válidos o no
-if (!isNaN(lat) && !isNaN(lng) && !isNaN(zoom)) {
+  // Verificar si los parámetros son válidos
+  if (!isNaN(lat) && !isNaN(lng) && !isNaN(zoom)) {
     map.setView([lat, lng], zoom);
-}
+  }
 
-// Conversión de coordenadas
+  // Conversión de coordenadas
   document.getElementById('convert').onclick = function() {
     var system = document.getElementById('system').value;
     var x = parseFloat(document.getElementById('coordX').value);
