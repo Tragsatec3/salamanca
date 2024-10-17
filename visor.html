@@ -9,9 +9,6 @@
   
   <script src="jquery-3.7.1.js"></script>
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script src="leaflet-maskcanvas-master/src/QuadTree.js"></script>
-  <script src="leaflet-maskcanvas-master/src/L.GridLayer.MaskCanvas.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.6/proj4.js"></script>
   
   <script type="text/javascript" src="salamanca.js"></script>
   <script type="text/javascript" src="municipios.js"></script>
@@ -124,33 +121,6 @@
     collapsed: false
   }).addTo(map);
 
-  // Evento de clic en el mapa
-  map.on('click', function(e) {
-    var url = catastroLayer.getFeatureInfoUrl(e.latlng, {
-      'info_format': 'application/json',
-      'query_layers': 'Catastro',
-      'buffer': 5,
-      'layers': 'Catastro',
-    });
-
-    if (url) {
-      fetch(url)
-      .then(response => response.json())
-      .then(data => {
-        if (data.features.length > 0) {
-          var properties = data.features[0].properties;
-          var referencia = properties.TXTPARCELA;
-          L.popup()
-          .setLatLng(e.latlng)
-          .setContent("Referencia Catastral: " + referencia)
-          .openOn(map);
-        } else {
-          alert("No se encontró información en esta ubicación.");
-        }
-      })
-      .catch(error => console.error('Error al obtener información:', error));
-    }
-  });
 
   // Función para obtener los parámetros de la URL
   function getQueryParam(param) {
