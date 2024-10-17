@@ -27,7 +27,7 @@
 <body>
 <h1>VISOR SALAMANCA: CATASTRO Y CALLEJEROS</h1>
 <div id="map"></div>
-
+<div id="coordinates" style="bottom: 10px; left: 10px; padding: 5px; border: hollow;"></div>
 <script>
   console.log(L.TileLayer.maskCanvas);
 
@@ -181,6 +181,13 @@
     var wgs84Coordinates = proj4(projString, [x, y]);
     map.setView([wgs84Coordinates[1], wgs84Coordinates[0]], zoom || 15);
   }
+  // Div para mostrar las coordenadas
+var coordsDiv = document.getElementById('coordinates');
+
+// Evento de movimiento del ratón
+map.on('mousemove', function(e) {
+    coordsDiv.innerHTML = `Latitud: ${e.latlng.lat.toFixed(5)}, Longitud: ${e.latlng.lng.toFixed(5)}`;
+});
 
 
 </script>
