@@ -6,7 +6,6 @@
   <title>Mapa de Salamanca</title>
   
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <link rel="stylesheet" href="main.css" />
   
   <script src="jquery-3.7.1.js"></script>
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -61,16 +60,6 @@
     attribution: '© Instituto Geográfico Nacional'
   });
 
-  // Crear la capa de máscara
-  var layerMaskSa = L.TileLayer.maskCanvas({
-    radius: 5,
-    useAbsoluteRadius: true,
-    color: '#000',
-    opacity: 0.5,
-    noMask: false,
-    lineColor: '#A00'
-  }).addTo(map); // Agregamos la máscara al mapa
-
   // Estilos
   var estilo_1 = {
     "color": "#feb24c",
@@ -105,11 +94,9 @@
     "Catastro": catastroLayer
   };
 
-  // Provincias y municipios en una sola clase
   var overlay = {
     "Provincia de Salamanca": salamancaLayer,
-    "Municipios": muniLayer,
-    "Máscara": layerMaskSa
+    "Municipios": muniLayer
   };
 
   // Funciones de popup para cada capa
