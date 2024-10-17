@@ -19,7 +19,7 @@
   <script src="https://unpkg.com/shapefile@latest/dist/shapefile.js"></script>
 
   <style>
-    #map { height: 600px; width: 90%; }
+    #map { height: 800px; width: 100%; }
   </style>
 </head>
 
@@ -27,28 +27,10 @@
 <h1>VISOR SALAMANCA: CATASTRO Y CALLEJEROS</h1>
 <div id="map"></div>
 
-<h2>Conversión de Coordenadas a WGS84</h2>
-<label for="system">Selecciona el sistema de coordenadas:</label>
-<select id="system">
-  <option value="WGS84">WGS84 (Lat, Lon)</option>
-  <option value="UTM30">UTM zona 30</option>
-  <option value="UTM31">UTM zona 31</option>
-</select>
-
-<div>
-  <label for="coordX">Coordenada X:</label>
-  <input type="number" id="coordX" required>
-</div>
-<div>
-  <label for="coordY">Coordenada Y:</label>
-  <input type="number" id="coordY" required>
-</div>
-<button id="convert">Convertir y Generar URL</button>
-
-<p id="result"></p>
-
 <script>
-  // Inicialización del mapa
+  console.log(L.TileLayer.maskCanvas);
+
+  // Mapa centrado en Salamanca
   var map = L.map('map').setView([40.8374, -6.0287], 9.4);
 
   // Mapas base
@@ -198,43 +180,6 @@
   if (!isNaN(lat) && !isNaN(lng) && !isNaN(zoom)) {
     map.setView([lat, lng], zoom);
   }
-
-  // Conversión de coordenadas
-  document.getElementById('convert').onclick = function() {
-    var system = document.getElementById('system').value;
-    var x = parseFloat(document.getElementById('coordX').value);
-    var y = parseFloat(document.getElementById('coordY').value);
-    var wgs84Coordinates;
-
-    // Definir el sistema de referencia
-    if (system === "WGS84") {
-      wgs84Coordinates = [x, y];
-    } else if (system === "UTM30") {
-      var utm30 = "+proj=utm +zone=30 +ellps=WGS84 +datum=WGS84 +units=m +no_defs";
-      wgs84Coordinates = proj4(utm30, [x, y]);
-    } else if (system === "UTM31") {
-      var utm31 = "+proj=utm +zone=31 +ellps=WGS84 +datum=WGS84 +units=m +no_defs";
-      wgs84Coordinates = proj4(utm31, [x, y]);
-    }
-
-    // Extraer latitud y longitud
-    var lng = wgs84Coordinates[0];
-    var lat = wgs84Coordinates[1];
-
-    // Construir la URL
-    var url = `https://tragsatec3.github.io/salamanca/visor.html?lat=${lat}&lng=${lng}&zoom=15`;
-
-    // Mostrar el resultado
-    document.getElementById('result').innerHTML = `URL generada: <a href="${url}" target="_blank">${url}</a>`;
-  }
-
-  //Un del ratón
-var coords = document.getElementById('coords');
-
-map.on('mousemove', function(e) {
-    coords.innerHTML = `Latitud: ${e.latlng.lat.toFixed(5)}, Longitud: ${e.latlng.lng.toFixed(5)}`;
-});
-
 </script>
 </body>
-</html>
+</html> 
