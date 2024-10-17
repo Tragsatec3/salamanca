@@ -170,6 +170,22 @@ map.on('click', function(e) {
   }
 });
 
+// Función para obtener los parámetros de la URL
+function getQueryParam(param) {
+    var urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(param);
+}
+
+// Aquí se obtienen los parámetros lat, long y zoom
+var lat = parseFloat(getQueryParam('lat'));
+var lng = parseFloat(getQueryParam('lng'));
+var zoom = parseInt(getQueryParam('zoom'));
+
+// Hay que verificar si los parámetros están bien, son válidos o no
+if (!isNaN(lat) && !isNaN(lng) && !isNaN(zoom)) {
+    map.setView([lat, lng], zoom);
+}
+
 </script>
 </body>
 </html>
