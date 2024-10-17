@@ -174,11 +174,22 @@
   // Aquí se obtienen los parámetros lat, long y zoom
   var lat = parseFloat(getQueryParam('lat'));
   var lng = parseFloat(getQueryParam('lng'));
+  var x = parseFloat(getQueryParam('x'));
+  var y = parseFloat(getQueryParam('y'));
   var zoom = parseInt(getQueryParam('zoom'));
 
   // Verificar si los parámetros son válidos
   if (!isNaN(lat) && !isNaN(lng) && !isNaN(zoom)) {
     map.setView([lat, lng], zoom);
+  }
+
+  // Verificar si las coordenadas proyectadas son válidas
+  else if (!isNaN(x) && !isNaN(y)) {
+  // Convertir UTM a WGS84 (modifica según tu zona UTM)
+  var utmZone = (x < 0) ? '30' : '31'; // Ejemplo simple, ajustar según necesidad
+  var projString = `+proj=utm +zone=${utmZone} +ellps=WGS84 +datum=WGS84 +units=m +no_defs`;
+  var wgs84Coordinates = proj4(projString, [x, y]);
+  map.setView([wgs84Coordinates[1], wgs84Coordinates[0]], zoom || 15);
   }
 </script>
 </body>
