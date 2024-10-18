@@ -42,7 +42,7 @@
   var osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-  }).addTo(map);
+  });
 
   var catastroLayer = L.tileLayer.wms("http://ovc.catastro.meh.es/Cartografia/WMS/ServidorWMS.aspx?", {
     layers: "Catastro",
@@ -64,7 +64,7 @@
     maxZoom: 25,
     transparent: true,
     attribution: '© Instituto Geográfico Nacional'
-  });
+  }).addTo(map);
 
   // Estilos
   var estilo_1 = {
@@ -75,7 +75,7 @@
 
   var estilo_2 = {
     "color": "#3182bd", 
-    "weight": 3,
+    "weight": 1,
     "opacity": 0.5,
     "fill": true,
     "fillOpacity": 0.01 
@@ -90,7 +90,7 @@
   var muniLayer = L.geoJson(municipios, {
     onEachFeature: onEachFeature,
     style: estilo_2,
-  }).addTo(map);
+  });
 
   // Mapas agregados en una sola clase
   var baseMaps = {
