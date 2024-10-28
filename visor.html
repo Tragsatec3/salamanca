@@ -3,198 +3,140 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mapa de Salamanca</title>
+  <title>Mapa de Salamanca - ETRS89 UTM</title>
   
+  <!-- Hoja de estilos de Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <link rel="stylesheet" href="main.css" />
   
-  <script src="jquery-3.7.1.js"></script>
+<style>
+  #map { height: 800px; width: 80%; }
+  #coordinates {
+    background-color: rgba(255, 255, 255, 0.8);
+    border: 1px solid #ccc;
+    padding: 10px;
+    position: fixed;
+    bottom: 120px;
+    left: 10px;
+    z-index: 1000;
+  }
+</style>
+  
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <!-- Leaflet -->
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script src="leaflet-maskcanvas-master/src/QuadTree.js"></script>
-  <script src="leaflet-maskcanvas-master/src/L.GridLayer.MaskCanvas.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.6/proj4.js"></script>
-    
-  
-  <script type="text/javascript" src="salamanca.js"></script>
-  <script type="text/javascript" src="municipios.js"></script>
+  <!-- Proj4js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.4/proj4.js"></script>
   <script type="text/javascript" src="prov.js"></script>
-  <script src="https://unpkg.com/shapefile@latest/dist/shapefile.js"></script>
+  <script type="text/javascript" src="municipios.js"></script>
 
-  <style>
-    #map { height: 800px; width: 100%; }
-  </style>
 </head>
-
 <body>
-<h1>VISOR SALAMANCA: CATASTRO Y CALLEJEROS</h1>
-<div id="map"></div>
+  <h1>Mapa de Salamanca - ETRS89 UTM</h1>
+  <div id="map"></div>
+  
+  <div id="coordinates">
+    <p><strong>Coordenadas del ratón:</strong></p>
+    <p id="wgs">WGS 84: </p>
+    <p id="etrs">ETRS89 UTM: </p>
+  </div>
 
-<div id="coordinates" style="bottom: 10px; left: 10px; padding: 5px; border: hollow;"></div>
+  <script>
+    $(document).ready(function() {
+      function getQueryParam(param) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(param);
+      }
 
+      const address = getQueryParam('address');  // Dirección en la URL
+      const lat = parseFloat(getQueryParam('lat')) || 40.8374;  
+      const lng = parseFloat(getQueryParam('lng')) || -6.0287;  
+      const x = parseFloat(getQueryParam('x'));                 
+      const y = parseFloat(getQueryParam('y'));                 
+      const zoom = parseInt(getQueryParam('zoom')) || 9;       
 
-<script>
-  console.log(L.TileLayer.maskCanvas);
+      var map = L.map('map').setView([lat, lng], zoom);
 
-  // Mapa centrado en Salamanca
-  var map = L.map('map').setView([40.8374, -6.0287], 9.4);
+      // Estilos
+      var estilo_1 = {
+        "color": "#EB5B00",
+        "weight": 4,
+        "opacity": 0.8
+      };
 
-  // Mapas base
-  var osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-  });
+      var estilo_2 = {
+        "color": "#3182bd",
+        "weight": 1,
+        "opacity": 3.5
+      };
 
-  var catastroLayer = L.tileLayer.wms("http://ovc.catastro.meh.es/Cartografia/WMS/ServidorWMS.aspx?", {
-    layers: "Catastro",
-    format: 'image/jpeg',
-    transparent: true,
-    maxZoom: 25,
-    version: '1.1.1',
-    attribution: "DIRECCION GENERAL DEL CATASTRO"
-  });
+      var osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(map);
 
-  var googleLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=m&hl=es&z={z}&x={x}&y={y}', {
-    maxZoom: 25,
-    attribution: '&copy; <a href="https://www.google.com/intl/es/help/terms_maps.html">Google Maps</a>'
-  });
+      var googleLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=m&hl=es&z={z}&x={x}&y={y}', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.google.com/intl/es/help/terms_maps.html">Google Maps</a>'
+      });
 
-  var callejero = L.tileLayer.wms('http://www.ign.es/wms-inspire/ign-base?', {
-    layers: 'IGNBaseTodo', 
-    format: 'image/png',
-    maxZoom: 25,
-    transparent: true,
-    attribution: '© Instituto Geográfico Nacional'
-  }).addTo(map);
+      var callejero = L.tileLayer.wms('http://www.ign.es/wms-inspire/ign-base?', {
+      layers: 'IGNBaseTodo', 
+      format: 'image/png',
+      maxZoom: 25,
+      transparent: true,
+      attribution: '© Instituto Geográfico Nacional'
+      }).addTo(map);
 
-  // Estilos
-  var estilo_1 = {
-    "color": "#feb24c",
-    "weight": 4,
-    "opacity": 0.8
-  };
+      
+      var catastroLayer = L.tileLayer.wms("http://ovc.catastro.meh.es/Cartografia/WMS/ServidorWMS.aspx?", {
+        layers: "Catastro",
+        format: 'image/jpeg',
+        transparent: true,
+        version: '1.1.1',
+        attribution: "DIRECCION GENERAL DEL CATASTRO"
+      });
 
-  var estilo_2 = {
-    "color": "#3182bd", 
-    "weight": 1,
-    "opacity": 0.5,
-    "fill": true,
-    "fillOpacity": 0.01 
-  };
+      var baseMaps = {
+        "Callejero": callejero,
+        "Google Maps": googleLayer,
+        "Open Street Map": osmLayer,
+        "Catastro": catastroLayer
+      };
 
-  // Capas
-  var salamancaLayer = L.geoJson(salamanca, {
-    onEachFeature: onEachLimites,
-    style: estilo_1,
-  }).addTo(map);
+      var overlay = {
+        "Provincia de Salamanca": L.geoJson(prov, { style: estilo_1 }).addTo(map),
+        "Municipios": L.geoJson(municipios, { style: estilo_2 })
+      };
 
-  var muniLayer = L.geoJson(municipios, {
-    onEachFeature: onEachFeature,
-    style: estilo_2,
-  });
+      L.control.layers(baseMaps, overlay, { position: 'topright' }).addTo(map);
+      L.control.scale({ metric: true, imperial: false }).addTo(map);
 
-  // Mapas agregados en una sola clase
-  var baseMaps = {
-    "Callejero": callejero,
-    "Google Maps": googleLayer,
-    "Open Street Map": osmLayer,
-    "Catastro": catastroLayer
-  };
+      function updateCoordinates(e) {
+        var lat = e.latlng.lat; 
+        var lng = e.latlng.lng;
+        $('#wgs').text(`WGS 84: ${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+        var etrsCoords = proj4('EPSG:4326', '+proj=utm +zone=30 +datum=ETRS89 +units=m +no_defs', [lng, lat]); 
+        $('#etrs').text(`ETRS89 UTM: X=${etrsCoords[0].toFixed(2)}, Y=${etrsCoords[1].toFixed(2)}`);
+      }
 
-  // Provincias y municipios en una sola clase
-  var overlay = {
-    "Provincia de Salamanca": salamancaLayer,
-    "Municipios": muniLayer
-  };
+      map.on('mousemove', updateCoordinates);
 
-  // Funciones de popup para cada capa
-  function onEachFeature(feature, layer) {
-    var popupContent = feature.properties.D_MUN || "Sin nombre";
-    layer.bindPopup(popupContent);
-  }
-
-  function onEachLimites(feature, layer) {
-    var popupContent = "<b>Salamanca</b>";
-    layer.bindPopup(popupContent);
-  }
-
-  // Control de escala
-  L.control.scale({
-    metric: true,
-    imperial: false,
-    maxWidth: 300,
-    position: 'bottomleft'
-  }).addTo(map);
-
-  // Control de capas
-  var control = L.control.layers(baseMaps, overlay, {
-    position: 'topright',
-    collapsed: false
-  }).addTo(map);
-
-  // Evento de clic en el mapa
-  map.on('click', function(e) {
-    var url = catastroLayer.getFeatureInfoUrl(e.latlng, {
-      'info_format': 'application/json',
-      'query_layers': 'Catastro',
-      'buffer': 5,
-      'layers': 'Catastro',
+      // Geocodificación
+      if (address) {
+        const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`;
+        
+        $.getJSON(geocodeUrl, function(data) {
+          if (data && data.length > 0) {
+            const { lat, lon } = data[0];
+            map.setView([lat, lon], zoom);
+            L.marker([lat, lon]).addTo(map).bindPopup(`Dirección: ${address}`).openPopup();
+          } else {
+            alert('No se encontró la dirección especificada.');
+          }
+        });
+      }
     });
-
-    if (url) {
-      fetch(url)
-      .then(response => response.json())
-      .then(data => {
-        if (data.features.length > 0) {
-          var properties = data.features[0].properties;
-          var referencia = properties.TXTPARCELA;
-          L.popup()
-          .setLatLng(e.latlng)
-          .setContent("Referencia Catastral: " + referencia)
-          .openOn(map);
-        } else {
-          alert("No se encontró información en esta ubicación.");
-        }
-      })
-      .catch(error => console.error('Error al obtener información:', error));
-    }
-  });
-
-  // Función para obtener los parámetros de la URL
-  function getQueryParam(param) {
-    var urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get(param);
-  }
-
-  // Aquí se obtienen los parámetros lat, long, x, y, además le añadimos el zoom que queramos
-  var lat = parseFloat(getQueryParam('lat'));
-  var lng = parseFloat(getQueryParam('lng'));
-  var x = parseFloat(getQueryParam('x'));
-  var y = parseFloat(getQueryParam('y'));
-  var zoom = parseInt(getQueryParam('zoom'));
-
-  // Verificar si los parámetros son válidos
-  if (!isNaN(lat) && !isNaN(lng) && !isNaN(zoom)) {
-    map.setView([lat, lng], zoom);
-  }
-
-  // Verificar si las coordenadas proyectadas son válidas
-  else if (!isNaN(x) && !isNaN(y)) {
-    // Convertir UTM a WGS84 (modifica según tu zona UTM)
-    var utmZone = (x < 0) ? '30' : '31'; // Ejemplo simple, ajustar según necesidad
-    var projString = `+proj=utm +zone=${utmZone} +ellps=WGS84 +datum=WGS84 +units=m +no_defs`;
-    var wgs84Coordinates = proj4(projString, [x, y]);
-    map.setView([wgs84Coordinates[1], wgs84Coordinates[0]], zoom || 15);
-  }
-
-  // Div para mostrar las coordenadas
-var coordsDiv = document.getElementById('coordinates');
-
-// Evento de movimiento del ratón
-map.on('mousemove', function(e) {
-    coordsDiv.innerHTML = `Latitud: ${e.latlng.lat.toFixed(5)}, Longitud: ${e.latlng.lng.toFixed(5)}`;
-});
-
-
-</script>
+  </script>
 </body>
 </html>
