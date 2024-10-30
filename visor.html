@@ -7,18 +7,20 @@
   
   <!-- Hoja de estilos de Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+
   
 <style>
-  #map { height: 800px; width: 80%; }
-  #coordinates {
-    background-color: rgba(255, 255, 255, 0.8);
-    border: 1px solid #ccc;
-    padding: 10px;
-    position: fixed;
-    bottom: 120px;
-    left: 10px;
-    z-index: 1000;
-  }
+    #map { height: 800px; width: 80%; }
+    #coordinates {
+      background-color: rgba(255, 255, 255, 0.8);
+      border: 1px solid #ccc;
+      padding: 10px;
+      position: fixed;
+      bottom: 120px;
+      left: 10px;
+      z-index: 1000;
+    }
 </style>
   
   <!-- jQuery -->
@@ -27,6 +29,8 @@
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <!-- Proj4js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.4/proj4.js"></script>
+  <script src="https://unpkg.com/leaflet-plugins/layer/tile/Google.js"></script>
+  <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
   <script type="text/javascript" src="prov.js"></script>
   <script type="text/javascript" src="municipios.js"></script>
 
@@ -35,6 +39,7 @@
   <h1>Mapa de Salamanca - ETRS89 UTM</h1>
   <div id="map"></div>
   
+  <!-- Cuadro para mostrar las coordenadas -->
   <div id="coordinates">
     <p><strong>Coordenadas del ratón:</strong></p>
     <p id="wgs">WGS 84: </p>
@@ -48,54 +53,86 @@
         return urlParams.get(param);
       }
 
-      const address = getQueryParam('address');  // Dirección en la URL
-      const lat = parseFloat(getQueryParam('lat')) || 40.8374;  
+      const address = getQueryParam('address');
+      const lat = parseFloat(getQueryParam('lat')) || 40.8374;
       const lng = parseFloat(getQueryParam('lng')) || -6.0287;  
       const x = parseFloat(getQueryParam('x'));                 
       const y = parseFloat(getQueryParam('y'));                 
-      const zoom = parseInt(getQueryParam('zoom')) || 9;       
+      const zoom = parseInt(getQueryParam('zoom')) || 9;
 
-      var map = L.map('map').setView([lat, lng], zoom);
-
-      // Estilos
-      var estilo_1 = {
-        "color": "#EB5B00",
-        "weight": 4,
-        "opacity": 0.8
-      };
-
-      var estilo_2 = {
-        "color": "#3182bd",
-        "weight": 1,
-        "opacity": 3.5
-      };
+      var map;
+      if (!isNaN(x) && !isNaN(y)) {
+        var wgsCoords = proj4('+proj=utm +zone=30 +datum=ETRS89 +units=m +no_defs', 'EPSG:4326', [x, y]);
+        map = L.map('map').setView([wgsCoords[1], wgsCoords[0]], zoom);
+      } else {
+        map = L.map('map').setView([lat, lng], zoom);
+      }
 
       var osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
+        maxZoom: 40,
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       }).addTo(map);
 
       var googleLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=m&hl=es&z={z}&x={x}&y={y}', {
-        maxZoom: 19,
+        maxZoom: 40,
         attribution: '&copy; <a href="https://www.google.com/intl/es/help/terms_maps.html">Google Maps</a>'
       });
 
-      var callejero = L.tileLayer.wms('http://www.ign.es/wms-inspire/ign-base?', {
-      layers: 'IGNBaseTodo', 
-      format: 'image/png',
-      maxZoom: 25,
-      transparent: true,
-      attribution: '© Instituto Geográfico Nacional'
-      }).addTo(map);
-
-      
       var catastroLayer = L.tileLayer.wms("http://ovc.catastro.meh.es/Cartografia/WMS/ServidorWMS.aspx?", {
-        layers: "Catastro",
-        format: 'image/jpeg',
+        layers: 'Catastro',
+        format: 'image/png',
         transparent: true,
         version: '1.1.1',
-        attribution: "DIRECCION GENERAL DEL CATASTRO"
-      });
+        attribution: "DIRECCION GENERAL DEL CATASTRO",
+        maxZoom:40
+      }).addTo(map);
+
+      var callejero = L.tileLayer.wms('http://www.ign.es/wms-inspire/ign-base?', {
+          layers: 'IGNBaseTodo', 
+          format: 'image/png',
+          maxZoom: 40,
+          transparent: true,
+          attribution: '© Instituto Geográfico Nacional'
+      }).addTo(map);
+
+      // Obtener información de la parcela
+    map.on('click', function (e) {
+    const url = `http://ovc.catastro.meh.es/Cartografia/WMS/ServidorWMS.aspx?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetFeatureInfo&LAYERS=Catastro&QUERY_LAYERS=Catastro&INFO_FORMAT=text/xml&SRS=EPSG:4326&BBOX=${map.getBounds().toBBoxString()}&WIDTH=${map.getSize().x}&HEIGHT=${map.getSize().y}&X=${Math.floor(e.containerPoint.x)}&Y=${Math.floor(e.containerPoint.y)}`;
+
+    fetch(url)
+    .then(response => response.text())
+    .then(data => {
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(data, "text/xml");
+
+        // Extraer la ref catastral de la etiqueta <a>
+        const enlace = xmlDoc.getElementsByTagName("a")[0];
+        const referenciaCatastral = enlace?.textContent || "No disponible";
+        
+        // Extraer rc1 y rc2 de la refcatastral
+        const rc1 = referenciaCatastral.substring(0, 7); 
+        const rc2 = referenciaCatastral.substring(7);
+
+        // Crear la URL para la sede elect del catastro de esa refenrencia concreta
+        const sedeElectronicaUrl = `https://www1.sedecatastro.gob.es/CYCBienInmueble/OVCListaBienes.aspx?RC1=${rc1}&RC2=${rc2}&RC3=&RC4=&esBice=&RCBice1=&RCBice2=&DenoBice=&pest=rc&final=&RCCompleta=${referenciaCatastral}&from=OVCBusqueda&tipoCarto=nuevo&ZV=NO&ZR=NO&anyoZV=&strFechaVR=&tematicos=&anyotem=`;
+
+        // Mostrar el popup con un hipervinculo
+        const popupContent = `
+            <strong>Referencia catastral:</strong> 
+            <a href="${sedeElectronicaUrl}" target="_blank">${referenciaCatastral}</a>
+        `;
+
+        L.popup()
+            .setLatLng(e.latlng)
+            .setContent(popupContent)
+            .openOn(map);
+    })
+    .catch(error => console.error('Error en GetFeatureInfo:', error));
+});
+
+
+
+
 
       var baseMaps = {
         "Callejero": callejero,
@@ -105,8 +142,8 @@
       };
 
       var overlay = {
-        "Provincia de Salamanca": L.geoJson(prov, { style: estilo_1 }).addTo(map),
-        "Municipios": L.geoJson(municipios, { style: estilo_2 })
+        "Provincia de Salamanca": L.geoJson(prov, { style: {"color": "#EB5B00", "weight": 4, "opacity": 0.8} }).addTo(map),
+        "Municipios": L.geoJson(municipios, { style: {"color": "#3182bd", "weight": 1, "opacity": 3.5} })
       };
 
       L.control.layers(baseMaps, overlay, { position: 'topright' }).addTo(map);
@@ -122,7 +159,6 @@
 
       map.on('mousemove', updateCoordinates);
 
-      // Geocodificación
       if (address) {
         const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`;
         
@@ -137,6 +173,15 @@
         });
       }
     });
+
+    L.Control.geocoder({
+    defaultMarkGeocode: true
+}).addTo(map);
+
   </script>
 </body>
 </html>
+
+
+
+
