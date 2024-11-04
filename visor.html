@@ -444,19 +444,20 @@ L.control.scale({ metric: true, imperial: false }).addTo(map);
         if (!frozenCoords) updateCoordinates(e); // le decimos que actualice las coordenadas cuando se descongelan
       });
 
-  $('#copyButton').on('click', function() {
+$('#copyButton').on('click', function() {
   const wgs = $('#wgs').text().replace('WGS 84: ', '');
   const etrs = $('#etrs').text().replace('ETRS89 UTM: ', '');
   const coordinates = `Coordenadas WGS 84: ${wgs} | ETRS89 UTM: ${etrs}`;
+  
+  // Crear un campo de texto temporal para copiar en HTTP
+  const tempInput = document.createElement('input');
+  tempInput.value = coordinates;
+  document.body.appendChild(tempInput);
+  tempInput.select();
+  document.execCommand('copy');
+  document.body.removeChild(tempInput);
 
-  // Prueba el flujo de clic
-  console.log("Botón de copiar clicado");
-
-  navigator.clipboard.writeText(coordinates).then(() => {
-    alert('¡Has copiado las coordenadas al portapapeles!'); // Confirmar con un alert
-  }).catch(err => {
-    console.error('Error al copiar al portapapeles: ', err);
-  });
+  alert('¡Has copiado las coordenadas al portapapeles!');
 });
 
 
