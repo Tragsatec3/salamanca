@@ -164,7 +164,6 @@
       });
 
       $('#copyButton').on('click', function() {
-        const wgs = $('#wgs').text().replace('WGS 84: ', '');
         const etrs = $('#etrs').text().replace('ETRS89 UTM: ', '');
         const coordinates = `Coordenadas WGS 84: ${wgs} | ETRS89 UTM: ${etrs}`;
 
