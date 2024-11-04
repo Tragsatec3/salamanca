@@ -165,7 +165,7 @@
 
       $('#copyButton').on('click', function() {
         const etrs = $('#etrs').text().replace('ETRS89 UTM: ', '');
-        const coordinates = `Coordenadas WGS 84: ${wgs} | ETRS89 UTM: ${etrs}`;
+        const coordinates = `ETRS89 UTM: ${etrs}`;
 
         navigator.clipboard.writeText(coordinates).then(() => {
           alert('¡Has copiado las coordendas al portapapeles!');
