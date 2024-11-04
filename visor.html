@@ -11,25 +11,29 @@
 
   <style>
     #map { height: 800px; width: 80%; }
-    #coordinates {
-      background-color: rgba(255, 255, 255, 0.8);
-      border: 1px solid #ccc;
-      padding: 10px;
-      position: fixed;
-      bottom: 120px;
-      left: 10px;
-      z-index: 4000;
-    }
-    #copyButton {
-      margin-top: 10px;
-      cursor: pointer;
-      padding: 5px 10px;
-      background-color: rgb(53, 9, 248);
-      color: white;
-      border: none;
-      border-radius: 5px;
-      z-index: 0;
-    }
+  #coordinates {
+  background-color: rgba(255, 255, 255, 0.8);
+  border: 1px solid #ccc;
+  padding: 10px;
+  position: fixed;
+  bottom: 120px;
+  left: 10px;
+  z-index: 1000;
+  max-width: 300px; /* Limita el ancho máximo del cuadro */
+}
+
+#copyButton {
+  margin-top: 10px;
+  cursor: pointer;
+  padding: 5px 10px;
+  background-color: rgb(53, 9, 248);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  display: block; /* Asegura que esté bien alineado */
+  width: fit-content;
+}
+
   </style>
 
   <!-- jQuery -->
