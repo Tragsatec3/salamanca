@@ -444,18 +444,21 @@ L.control.scale({ metric: true, imperial: false }).addTo(map);
         if (!frozenCoords) updateCoordinates(e); // le decimos que actualice las coordenadas cuando se descongelan
       });
 
-      $('#copyButton').on('click', function() {
-        const wgs = $('#wgs').text().replace('WGS 84: ', '');
-        const etrs = $('#etrs').text().replace('ETRS89 UTM: ', '');
-        const coordinates = `Coordenadas WGS 84: ${wgs} | ETRS89 UTM: ${etrs}`;
+  $('#copyButton').on('click', function() {
+  const wgs = $('#wgs').text().replace('WGS 84: ', '');
+  const etrs = $('#etrs').text().replace('ETRS89 UTM: ', '');
+  const coordinates = `Coordenadas WGS 84: ${wgs} | ETRS89 UTM: ${etrs}`;
 
-        //Lanzar un mensaje para que se sepa que se han copiado las coordenadas bien
-        navigator.clipboard.writeText(coordinates).then(() => {
-          alert('¡Has copiado las coordendas al portapapeles!');
-        }).catch(err => {
-          console.error('Error al copiar al portapapeles: ', err);
-        });
-      });
+  // Prueba el flujo de clic
+  console.log("Botón de copiar clicado");
+
+  navigator.clipboard.writeText(coordinates).then(() => {
+    alert('¡Has copiado las coordenadas al portapapeles!'); // Confirmar con un alert
+  }).catch(err => {
+    console.error('Error al copiar al portapapeles: ', err);
+  });
+});
+
 
       //para buscar en los parámetros de la url por dirección directamente (no funciona bien)
 
