@@ -28,8 +28,8 @@
       color: white;
       border: none;
       border-radius: 5px;
-      z-index: 0;
     }
+    #hiddenCoordinates { display: none; }
   </style>
 
   <!-- jQuery -->
@@ -42,7 +42,6 @@
   <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
   <script type="text/javascript" src="prov.js"></script>
   <script type="text/javascript" src="municipios.js"></script>
-
 </head>
 <body>
   <h1>Mapa de Salamanca - ETRS89 UTM</h1>
@@ -53,7 +52,9 @@
     <p><strong>Coordenadas del ratón:</strong></p>
     <p id="wgs">WGS 84: </p>
     <p id="etrs">ETRS89 UTM: </p>
-    <button id="copyButton">copiar coordenadas</button> <!-- Botón para poder copiar las coord -->
+    <button id="copyButton">Copiar coordenadas</button>
+    <!-- Campo de texto oculto para coordendas -->
+    <input type="text" id="hiddenCoordinates">
   </div>
 
   <script>
@@ -71,7 +72,7 @@
       const zoom = parseInt(getQueryParam('zoom')) || 9;
 
       let map;
-      let frozenCoords = false; //para congelar y descongelar las coordenadas
+      let frozenCoords = false; 
 
       if (!isNaN(x) && !isNaN(y)) {
         var wgsCoords = proj4('+proj=utm +zone=30 +datum=ETRS89 +units=m +no_defs', 'EPSG:4326', [x, y]);
@@ -112,38 +113,6 @@
           attribution: '© Instituto Geográfico Nacional'
       }).addTo(map);
 
-      // Obtener información de la parcela
-      map.on('click', function (e) {
-        const url = `http://ovc.catastro.meh.es/Cartografia/WMS/ServidorWMS.aspx?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetFeatureInfo&LAYERS=Catastro&QUERY_LAYERS=Catastro&INFO_FORMAT=text/xml&SRS=EPSG:4326&BBOX=${map.getBounds().toBBoxString()}&WIDTH=${map.getSize().x}&HEIGHT=${map.getSize().y}&X=${Math.floor(e.containerPoint.x)}&Y=${Math.floor(e.containerPoint.y)}`;
-
-        fetch(url)
-          .then(response => response.text())
-          .then(data => {
-            const parser = new DOMParser();
-            const xmlDoc = parser.parseFromString(data, "text/xml");
-
-            const enlace = xmlDoc.getElementsByTagName("a")[0];
-            const referenciaCatastral = enlace?.textContent || "No disponible";
-           
-            const rc1 = referenciaCatastral.substring(0, 7);
-            const rc2 = referenciaCatastral.substring(7);
-
-            const sedeElectronicaUrl = `https://www1.sedecatastro.gob.es/CYCBienInmueble/OVCListaBienes.aspx?RC1=${rc1}&RC2=${rc2}&RC3=&RC4=&esBice=&RCBice1=&RCBice2=&DenoBice=&pest=rc&final=&RCCompleta=${referenciaCatastral}&from=OVCBusqueda&tipoCarto=nuevo&ZV=NO&ZR=NO&anyoZV=&strFechaVR=&tematicos=&anyotem=`;
-
-            const popupContent = `
-                <strong>Referencia catastral:</strong>
-                <a href="${sedeElectronicaUrl}" target="_blank">${referenciaCatastral}</a>
-            `;
-
-            L.popup()
-                .setLatLng(e.latlng)
-                .setContent(popupContent)
-                .openOn(map);
-          })
-          .catch(error => console.error('Error en GetFeatureInfo:', error));
-      });
-
-// Mapas base
       var baseMaps = {
         "Callejero": callejero,
         "Google Maps": googleLayer,
@@ -152,41 +121,34 @@
         "Imagen PNOA": pnoaLayer
       };
 
-// Capas de provincia y municipios
-var overlay = {
-  "Provincia de Salamanca": L.geoJson(prov, { 
-    style: {"color": "#EB5B00", "weight": 4, "opacity": 0.8} 
-  }).addTo(map),
-  
-  "Municipios": L.geoJson(municipios, { 
-    style: {"color": "#3182bd", "weight": 1, "opacity": 3.5}, 
-    onEachFeature: function(feature, layer) {
-      layer.on('mouseover', function(e) {
-        var municipioInfo = `
-          <b> ${feature.properties.D_MUN} </b><br>
-        `;
+      var overlay = {
+        "Provincia de Salamanca": L.geoJson(prov, { 
+          style: {"color": "#EB5B00", "weight": 4, "opacity": 0.8} 
+        }).addTo(map),
+        
+        "Municipios": L.geoJson(municipios, { 
+          style: {"color": "#3182bd", "weight": 1, "opacity": 3.5}, 
+          onEachFeature: function(feature, layer) {
+            layer.on('mouseover', function(e) {
+              var municipioInfo = `<b> ${feature.properties.D_MUN} </b><br>`;
+              var popup = L.popup()
+                .setLatLng(e.latlng)
+                .setContent(municipioInfo)
+                .openOn(map);
 
-        var popup = L.popup()
-          .setLatLng(e.latlng)
-          .setContent(municipioInfo)
-          .openOn(map);
+              layer.on('mouseout', function() {
+                map.closePopup(popup);
+              });
+            });
+          }
+        }).addTo(map)
+      };
 
-        // Cerrar popup cuando el ratón salga del municipio
-        layer.on('mouseout', function() {
-          map.closePopup(popup);
-        });
-      });
-    }
-  }).addTo(map)
-}; // <-- Cierra el objeto overlay aquí
+      L.control.layers(baseMaps, overlay, { position: 'topright' }).addTo(map);
+      L.control.scale({ metric: true, imperial: false }).addTo(map);
 
-// Control de capas
-L.control.layers(baseMaps, overlay, { position: 'topright' }).addTo(map);
-L.control.scale({ metric: true, imperial: false }).addTo(map);
-
-//funcion para actualizar las coordenadas
       function updateCoordinates(e) {
-        if (frozenCoords) return; // Si están congeladas, no actualizar
+        if (frozenCoords) return; 
         var lat = e.latlng.lat;
         var lng = e.latlng.lng;
         $('#wgs').text(`WGS 84: ${lat.toFixed(4)}, ${lng.toFixed(4)}`);
@@ -196,46 +158,27 @@ L.control.scale({ metric: true, imperial: false }).addTo(map);
 
       map.on('mousemove', updateCoordinates);
 
-      // Alternar entre congelar y descongelar las coordenadas
       map.on('click', function(e) {
-        frozenCoords = !frozenCoords; // aquí se va alternando el estado de las coordenadas
-        if (!frozenCoords) updateCoordinates(e); // le decimos que actualice las coordenadas cuando se descongelan
+        frozenCoords = !frozenCoords;
+        if (!frozenCoords) updateCoordinates(e); 
       });
 
-     $('#copyButton').on('click', function() {
-  const wgs = $('#wgs').text().replace('WGS 84: ', '');
-  const etrs = $('#etrs').text().replace('ETRS89 UTM: ', '');
-  const coordinates = `Coordenadas WGS 84: ${wgs} | ETRS89 UTM: ${etrs}`;
+      $('#copyButton').on('click', function() {
+        const wgs = $('#wgs').text().replace('WGS 84: ', '');
+        const etrs = $('#etrs').text().replace('ETRS89 UTM: ', '');
+        const coordinates = `Coordenadas WGS 84: ${wgs} | ETRS89 UTM: ${etrs}`;
 
-  navigator.clipboard.writeText(coordinates).then(() => {
-    alert('¡Has copiado las coordendas al portapapeles!');
-  }).catch(err => {
-    console.error('Error al copiar al portapapeles: ', err);
-    alert('Hubo un problema al copiar. Asegúrate de que estás en HTTPS.');
-  });
-});
-
-
-      //para buscar en los parámetros de la url por dirección directamente (no funciona bien)
-
-      if (address) {
-        const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`;
-       
-        $.getJSON(geocodeUrl, function(data) {
-          if (data && data.length > 0) {
-            const { lat, lon } = data[0];
-            map.setView([lat, lon], zoom);
-            L.marker([lat, lon]).addTo(map).bindPopup(`Dirección: ${address}`).openPopup();
-          } else {
-            alert('No se encontró la dirección especificada.');
-          }
+        navigator.clipboard.writeText(coordinates).then(() => {
+          alert('¡Has copiado las coordendas al portapapeles!');
+        }).catch(err => {
+          $('#hiddenCoordinates').val(coordinates).show().select();
+          document.execCommand("copy");
+          $('#hiddenCoordinates').hide();
+          alert('¡Coordenadas copiadas usando método alternativo!');
+          console.error('Error al copiar al portapapeles con clipboard: ', err);
         });
-      }
+      });
     });
-
-    L.Control.geocoder({
-      defaultMarkGeocode: true
-    }).addTo(map);
   </script>
 </body>
 </html>
